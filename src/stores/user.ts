@@ -1,0 +1,78 @@
+import { defineStore } from 'pinia'
+import { ref } from 'vue'
+import api from '@/lib/api'
+
+export interface Demographics {
+  email?: string
+  username?: string
+  age?: string
+  gender?: string
+  variantCode?: string
+  accentCode?: string
+}
+
+export const useUserStore = defineStore('user', () => {
+  const STORAGE_KEY = 'cv_user_id'
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  const storedId = localStorage.getItem(STORAGE_KEY)
+  if (storedId && !UUID_RE.test(storedId)) localStorage.removeItem(STORAGE_KEY)
+  const userId = ref<string | null>(storedId && UUID_RE.test(storedId) ? storedId : null)
+  const username = ref<string>('User')
+  const age = ref<string | null>(null)
+  const gender = ref<string | null>(null)
+  const variantCode = ref<string | null>(null)
+  const accentCode = ref<string | null>(null)
+
+  async function createUser(demo: Demographics = {}) {
+    if (userId.value) return
+    try {
+      const { data } = await api.post('/auth/users', demo)
+      console.log('[createUser] response:', data)
+      const id: string = data.userId ?? data.id ?? data.user?.id ?? data.user?.userId
+      if (!id) throw new Error(`Unexpected /auth/users response shape: ${JSON.stringify(data)}`)
+      userId.value = id
+      if (data.username ?? data.user?.username) {
+        username.value = data.username ?? data.user?.username
+      }
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status: number; data: Record<string, unknown> & { user?: { userId?: string; id?: string } } } }
+      if (axiosErr.response?.status === 409) {
+        const d = axiosErr.response.data
+        const id = (d.user?.userId ?? d.user?.id ?? d.userId ?? d.id) as string | undefined
+        if (!id) throw new Error('409 but no userId in response')
+        userId.value = id
+      } else {
+        throw err
+      }
+    }
+    if (userId.value) localStorage.setItem(STORAGE_KEY, userId.value)
+  }
+
+  function setDemographics(demo: Demographics) {
+    if (demo.age !== undefined) age.value = demo.age
+    if (demo.gender !== undefined) gender.value = demo.gender
+    if (demo.variantCode !== undefined) variantCode.value = demo.variantCode
+    if (demo.accentCode !== undefined) accentCode.value = demo.accentCode
+  }
+
+  function getDemographics(): Demographics {
+    return {
+      ...(age.value ? { age: age.value } : {}),
+      ...(gender.value ? { gender: gender.value } : {}),
+      ...(variantCode.value ? { variantCode: variantCode.value } : {}),
+      ...(accentCode.value ? { accentCode: accentCode.value } : {}),
+    }
+  }
+
+  function logout() {
+    localStorage.removeItem(STORAGE_KEY)
+    userId.value = null
+    username.value = 'User'
+    age.value = null
+    gender.value = null
+    variantCode.value = null
+    accentCode.value = null
+  }
+
+  return { userId, username, age, gender, variantCode, accentCode, createUser, setDemographics, getDemographics, logout }
+})
