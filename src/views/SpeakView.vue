@@ -348,4 +348,35 @@ onUnmounted(() => {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 640px) {
+  .speak-view {
+    padding: 16px 16px 100px;
+    gap: 16px;
+    min-height: calc(100vh - 48px);
+  }
+  .content-row {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  .card-area {
+    max-width: 100%;
+  }
+  .action-bar {
+    padding: 12px 16px;
+  }
+  .action-bar-right {
+    gap: 8px;
+  }
+  .submit-btn {
+    padding: 10px 20px;
+    min-width: 100px;
+    font-size: 0.85rem;
+  }
+  .skip-btn {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+}
 </style>

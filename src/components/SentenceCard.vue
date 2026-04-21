@@ -76,4 +76,14 @@ defineProps<{
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
+
+@media (max-width: 640px) {
+  .sentence-card {
+    padding: 24px 20px;
+    min-height: 120px;
+  }
+  .sentence-text {
+    font-size: 1.2rem;
+  }
+}
 </style>

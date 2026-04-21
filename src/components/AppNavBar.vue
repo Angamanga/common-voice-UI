@@ -2,13 +2,14 @@
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useDatasetStore } from '@/stores/dataset'
-import { ref } from 'vue'
+import { computed } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 const datasetStore = useDatasetStore()
-const dropdownOpen = ref(false)
+
+const isLoggedIn = computed(() => !!userStore.userId)
 
 const emit = defineEmits<{
   logout: []
@@ -16,7 +17,6 @@ const emit = defineEmits<{
 }>()
 
 function onLogout() {
-  dropdownOpen.value = false
   emit('logout')
 }
 
@@ -79,14 +79,9 @@ function navigate(path: string) {
       </div>
 
       <!-- User menu -->
-      <button class="user-btn" @click="dropdownOpen = !dropdownOpen">
-        <div class="avatar">{{ userStore.username.charAt(0).toUpperCase() }}</div>
-        <span class="username">{{ userStore.username }}</span>
-        <span class="chevron" :class="{ open: dropdownOpen }">▾</span>
+      <button v-if="isLoggedIn" class="user-btn" @click="onLogout">
+        Log out
       </button>
-      <div v-if="dropdownOpen" class="dropdown" @click.stop>
-        <div class="dropdown-item" @click="onLogout">Log out</div>
-      </div>
     </div>
   </header>
 </template>
@@ -232,6 +227,33 @@ function navigate(path: string) {
 }
 
 .chevron.open { transform: rotate(180deg); }
+
+@media (max-width: 640px) {
+  .navbar {
+    padding: 0 12px;
+    height: 48px;
+  }
+  .navbar-left {
+    margin-right: 8px;
+  }
+  .logo-img {
+    height: 22px;
+  }
+  .tab-btn {
+    padding: 0 10px;
+    font-size: 0.8rem;
+    gap: 4px;
+  }
+  .lang-select {
+    font-size: 0.78rem;
+    padding: 4px 22px 4px 8px;
+    max-width: 110px;
+  }
+  .user-btn {
+    font-size: 0.8rem;
+    padding: 4px 6px;
+  }
+}
 
 .dropdown {
   position: absolute;

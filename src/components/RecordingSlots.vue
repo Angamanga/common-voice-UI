@@ -198,4 +198,29 @@ const slots = computed(() =>
 .hidden-audio {
   display: none;
 }
+
+@media (max-width: 640px) {
+  .slots-panel {
+    flex-direction: row;
+    width: 100%;
+    justify-content: center;
+    gap: 8px;
+  }
+  .slot {
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: auto;
+    min-height: 72px;
+    flex: 1;
+    gap: 6px;
+  }
+  .start-btn {
+    font-size: 0.55rem;
+    padding: 5px 8px;
+    white-space: normal;
+    text-align: center;
+    line-height: 1.3;
+  }
+}
 </style>

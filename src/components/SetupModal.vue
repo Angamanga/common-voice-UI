@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref } from 'vue'
 import { useDatasetStore } from '@/stores/dataset'
 import { useUserStore } from '@/stores/user'
 
@@ -8,9 +8,7 @@ const emit = defineEmits<{ done: [] }>()
 const datasetStore = useDatasetStore()
 const userStore = useUserStore()
 
-const SWEDISH_FALLBACK = { code: 'sv-SE', name: 'Swedish' }
-
-const selectedCode = ref(datasetStore.selectedCode || SWEDISH_FALLBACK.code)
+const selectedCode = ref(datasetStore.selectedCode)
 const selectedAge = ref(userStore.age ?? '')
 const selectedGender = ref(userStore.gender ?? '')
 const selectedVariant = ref(userStore.variantCode ?? '')
@@ -20,15 +18,6 @@ const error = ref<string | null>(null)
 
 const AGE_RANGES = ['', 'teens', 'twenties', 'thirties', 'forties', 'fifties', 'sixties', 'seventies', 'eighties', 'nineties']
 const GENDERS = ['', 'male', 'female', 'other', 'prefer not to say']
-
-// Fetch in background to populate dropdown; Swedish fallback is always available
-onMounted(() => {
-  if (datasetStore.datasets.length === 0) {
-    datasetStore.fetchDatasets().then(() => {
-      if (!selectedCode.value) selectedCode.value = datasetStore.selectedCode
-    }).catch(() => { /* non-blocking — Swedish fallback covers this */ })
-  }
-})
 
 async function submit() {
   loading.value = true
@@ -62,20 +51,13 @@ async function submit() {
       <div class="field">
         <label>Language / Dataset</label>
         <select v-model="selectedCode">
-          <!-- Always present Swedish fallback so the modal is never broken -->
-          <option :value="SWEDISH_FALLBACK.code">
-            {{ SWEDISH_FALLBACK.name }} ({{ SWEDISH_FALLBACK.code }})
+          <option
+            v-for="lang in datasetStore.languages"
+            :key="lang.code"
+            :value="lang.code"
+          >
+            {{ lang.name }} ({{ lang.code }})
           </option>
-          <template v-if="datasetStore.datasets.length > 0">
-            <option
-              v-for="ds in datasetStore.datasets.filter(d => d.code !== SWEDISH_FALLBACK.code)"
-              :key="ds.code"
-              :value="ds.code"
-            >
-              {{ ds.name }} ({{ ds.code }})
-            </option>
-          </template>
-          <option v-else-if="datasetStore.loading" disabled value="">Loading more…</option>
         </select>
       </div>
 
@@ -207,5 +189,15 @@ async function submit() {
 .submit-btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .modal {
+    padding: 28px 20px;
+    margin: 0 16px;
+    border-radius: 12px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
 }
 </style>

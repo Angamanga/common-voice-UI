@@ -187,4 +187,12 @@ async function submit() {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+@media (max-width: 640px) {
+  .modal {
+    padding: 28px 20px;
+    margin: 0 16px;
+    border-radius: 12px;
+  }
+}
 </style>
