@@ -2,7 +2,9 @@ import axios, { type AxiosError, type InternalAxiosRequestConfig, type AxiosResp
 import { useAuthStore } from '@/stores/auth'
 
 export const BASE_URL =
-  import.meta.env.DEV ? '/cv-api' : 'https://api.commonvoice.mozilla.org'
+  import.meta.env.DEV
+    ? '/cv-api'
+    : (import.meta.env.VITE_API_BASE_URL || 'https://api.commonvoice.mozilla.org')
 
 const api = axios.create({ baseURL: BASE_URL })
 
