@@ -26,10 +26,10 @@ export const useUserStore = defineStore('user', () => {
   async function createUser(demo: Demographics = {}) {
     if (userId.value) return
     try {
-      const { data } = await api.post('/auth/users', demo)
-      console.log('[createUser] response:', data)
+      const { data: raw } = await api.post('/auth/users', demo)
+      const data = raw?.data ?? raw
       const id: string = data.userId ?? data.id ?? data.user?.id ?? data.user?.userId
-      if (!id) throw new Error(`Unexpected /auth/users response shape: ${JSON.stringify(data)}`)
+      if (!id) throw new Error(`Unexpected /auth/users response shape: ${JSON.stringify(raw)}`)
       userId.value = id
       if (data.username ?? data.user?.username) {
         username.value = data.username ?? data.user?.username
