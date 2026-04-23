@@ -13,12 +13,17 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   async function fetchToken() {
-    const { data } = await axios.post(`${BASE_URL}/auth/token`, {
-      clientId: import.meta.env.VITE_CV_CLIENT_ID,
-      clientSecret: import.meta.env.VITE_CV_CLIENT_SECRET,
-    })
-    token.value = data.token
-    expiresAt.value = Date.now() + data.expiresIn * 1000
+    // Use a token-exchange Lambda URL if provided; otherwise fall back to upstream
+    const exchangeUrl = import.meta.env.VITE_TOKEN_EXCHANGE_URL || `${BASE_URL}/auth/token`
+    // client_id moved to the secure Lambda environment; frontend does not send it
+    const payload = { grant_type: 'client_credentials' }
+    const { data } = await axios.post(exchangeUrl, payload)
+
+    // support multiple response shapes
+    const access = data.token || data.access_token || data.accessToken
+    const ttl = data.expiresIn || data.expires_in || data.expires || 3600
+    token.value = access
+    expiresAt.value = Date.now() + ttl * 1000
   }
 
   return { token, expiresAt, isTokenExpired, fetchToken }
