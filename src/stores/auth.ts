@@ -13,10 +13,16 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   async function fetchToken() {
-    // Use a token-exchange Lambda URL if provided; otherwise fall back to upstream
     const exchangeUrl = import.meta.env.VITE_TOKEN_EXCHANGE_URL || `${BASE_URL}/auth/token`
-    // client_id moved to the secure Lambda environment; frontend does not send it
-    const payload = { grant_type: 'client_credentials' }
+    const payload: Record<string, string> = { grant_type: 'client_credentials' }
+
+    // When hitting the CV API directly (no Lambda proxy), credentials must be included.
+    // In production the Lambda injects them server-side.
+    if (!import.meta.env.VITE_TOKEN_EXCHANGE_URL) {
+      payload.clientId = import.meta.env.VITE_CV_CLIENT_ID
+      payload.clientSecret = import.meta.env.VITE_CV_CLIENT_SECRET
+    }
+
     const { data } = await axios.post(exchangeUrl, payload)
 
     // support multiple response shapes

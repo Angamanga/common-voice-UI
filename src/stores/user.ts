@@ -23,8 +23,8 @@ export const useUserStore = defineStore('user', () => {
   const variantCode = ref<string | null>(null)
   const accentCode = ref<string | null>(null)
 
-  async function createUser(demo: Demographics = {}) {
-    if (userId.value) return
+  async function createUser(demo: Demographics = {}): Promise<{ isNew: boolean }> {
+    if (userId.value) return { isNew: false }
     try {
       const { data: raw } = await api.post('/auth/users', demo)
       const data = raw?.data ?? raw
@@ -34,6 +34,8 @@ export const useUserStore = defineStore('user', () => {
       if (data.username ?? data.user?.username) {
         username.value = data.username ?? data.user?.username
       }
+      localStorage.setItem(STORAGE_KEY, userId.value)
+      return { isNew: true }
     } catch (err: unknown) {
       const axiosErr = err as { response?: { status: number; data: Record<string, unknown> & { user?: { userId?: string; id?: string } } } }
       if (axiosErr.response?.status === 409) {
@@ -41,11 +43,12 @@ export const useUserStore = defineStore('user', () => {
         const id = (d.user?.userId ?? d.user?.id ?? d.userId ?? d.id) as string | undefined
         if (!id) throw new Error('409 but no userId in response')
         userId.value = id
+        localStorage.setItem(STORAGE_KEY, userId.value)
+        return { isNew: false }
       } else {
         throw err
       }
     }
-    if (userId.value) localStorage.setItem(STORAGE_KEY, userId.value)
   }
 
   function setDemographics(demo: Demographics) {

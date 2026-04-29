@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import AppNavBar from '@/components/AppNavBar.vue'
 import LoginModal from '@/components/LoginModal.vue'
+import SetupModal from '@/components/SetupModal.vue'
 import { useAuthStore } from '@/stores/auth'
 import { useUserStore } from '@/stores/user'
 import { useSentenceStore } from '@/stores/sentence'
@@ -14,6 +15,7 @@ const datasetStore = useDatasetStore()
 
 const initError = ref<string | null>(null)
 const needsLogin = ref(!userStore.userId)
+const showSetup = ref(false)
 
 onMounted(async () => {
   try {
@@ -29,6 +31,20 @@ onMounted(async () => {
 
 async function onLoginDone() {
   needsLogin.value = false
+  try {
+    await sentenceStore.fetchBatch(datasetStore.selectedCode)
+  } catch (err: unknown) {
+    initError.value = err instanceof Error ? err.message : 'Could not load sentences.'
+  }
+}
+
+function onNeedsSetup() {
+  needsLogin.value = false
+  showSetup.value = true
+}
+
+async function onSetupDone() {
+  showSetup.value = false
   try {
     await sentenceStore.fetchBatch(datasetStore.selectedCode)
   } catch (err: unknown) {
@@ -63,7 +79,8 @@ async function onLanguageChange(code: string) {
       <router-view v-else />
     </main>
 
-    <LoginModal v-if="needsLogin" @done="onLoginDone" />
+    <LoginModal v-if="needsLogin" @done="onLoginDone" @needs-setup="onNeedsSetup" />
+    <SetupModal v-if="showSetup" @done="onSetupDone" />
   </div>
 </template>
 
