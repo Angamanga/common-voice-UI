@@ -14,6 +14,25 @@ function offsetKey(languageCode: string) {
   return `cv_sentence_offset_${languageCode}`
 }
 
+function recordedIdsKey(languageCode: string) {
+  return `cv_recorded_ids_${languageCode}`
+}
+
+function loadRecordedIds(languageCode: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(recordedIdsKey(languageCode))
+    return raw ? new Set(JSON.parse(raw) as string[]) : new Set()
+  } catch {
+    return new Set()
+  }
+}
+
+function persistRecordedIdsToStorage(languageCode: string, ids: string[]) {
+  const existing = loadRecordedIds(languageCode)
+  ids.forEach((id) => existing.add(id))
+  localStorage.setItem(recordedIdsKey(languageCode), JSON.stringify([...existing]))
+}
+
 export const useSentenceStore = defineStore('sentence', () => {
   const slots = ref<SentenceSlot[]>([])
   const activeIndex = ref(0)
@@ -32,10 +51,9 @@ export const useSentenceStore = defineStore('sentence', () => {
 
   const recordedCount = computed(() => slots.value.filter((s) => s.status === 'recorded').length)
 
-  async function fetchBatch(languageCode: string) {
+  async function fetchBatch(languageCode: string, _retryCount = 0) {
     loading.value = true
     error.value = null
-    // Load this language's persisted offset before fetching
     offset.value = parseInt(localStorage.getItem(offsetKey(languageCode)) ?? '0', 10)
     try {
       const { data } = await api.get('/text/sentences', {
@@ -43,10 +61,20 @@ export const useSentenceStore = defineStore('sentence', () => {
       })
       console.log(`[sentences] ${languageCode} offset=${offset.value}`, data)
       const sentences: Sentence[] = data.data ?? data.sentences ?? data
-      slots.value = sentences.map((s) => ({ sentence: s, status: 'pending' }))
-      activeIndex.value = 0
       offset.value += 5
       localStorage.setItem(offsetKey(languageCode), String(offset.value))
+
+      const recordedIds = loadRecordedIds(languageCode)
+      const fresh = sentences.filter((s) => !recordedIds.has(s.id))
+
+      // All sentences in this batch already recorded — try the next batch (max 5 retries)
+      if (fresh.length === 0 && sentences.length > 0 && _retryCount < 5) {
+        loading.value = false
+        return fetchBatch(languageCode, _retryCount + 1)
+      }
+
+      slots.value = fresh.map((s) => ({ sentence: s, status: 'pending' }))
+      activeIndex.value = 0
     } catch (err: unknown) {
       error.value = err instanceof Error ? err.message : 'Failed to load sentences'
       throw err
@@ -76,6 +104,10 @@ export const useSentenceStore = defineStore('sentence', () => {
     if (next !== -1) activeIndex.value = next
   }
 
+  function persistRecordedIds(languageCode: string, ids: string[]) {
+    persistRecordedIdsToStorage(languageCode, ids)
+  }
+
   function reset(clearOffset = false, languageCode?: string) {
     slots.value = []
     activeIndex.value = 0
@@ -98,6 +130,7 @@ export const useSentenceStore = defineStore('sentence', () => {
     markRecorded,
     markSkipped,
     setActiveIndex,
+    persistRecordedIds,
     reset,
   }
 })
