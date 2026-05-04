@@ -39,8 +39,8 @@ function navigate(path: string) {
     <div class="navbar-left">
       <div class="logo">
         <img
-          src="https://commonvoice.mozilla.org/dist/cv-logo-black.270d5891c1700962.svg"
-          alt="Common Voice"
+          src="@/assets/mvdc-logo.png"
+          alt="MVDC - Every Voice Matters"
           class="logo-img"
         />
       </div>
@@ -92,7 +92,7 @@ function navigate(path: string) {
   align-items: stretch;
   background: #fff;
   border-bottom: 1px solid #e8e8e8;
-  height: 56px;
+  height: 80px;
   padding: 0 24px;
   position: sticky;
   top: 0;
@@ -111,7 +111,7 @@ function navigate(path: string) {
 }
 
 .logo-img {
-  height: 28px;
+  height: 64px;
   width: auto;
   display: block;
 }

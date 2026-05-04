@@ -2,7 +2,7 @@
 import { ref } from 'vue'
 import { useUserStore } from '@/stores/user'
 
-const emit = defineEmits<{ done: [] }>()
+const emit = defineEmits<{ done: []; 'needs-setup': [] }>()
 
 const userStore = useUserStore()
 const email = ref('')
@@ -22,8 +22,9 @@ async function submit() {
   error.value = null
   try {
     const username = email.value.split('@')[0]
-    await userStore.createUser({ email: email.value, username })
-    emit('done')
+    const { isNew } = await userStore.createUser({ email: email.value, username })
+    if (isNew) emit('needs-setup')
+    else emit('done')
   } catch (err: unknown) {
     error.value = err instanceof Error ? err.message : 'Something went wrong. Please try again.'
   } finally {

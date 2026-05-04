@@ -95,6 +95,11 @@ async function onSubmit() {
       userId: userStore.userId ?? '',
       ...userStore.getDemographics(),
     })
+    // Persist the IDs of successfully uploaded sentences so they are skipped in future sessions
+    const uploadedIds = sentenceStore.slots
+      .filter((s) => s.status === 'recorded')
+      .map((s) => s.sentence.id)
+    sentenceStore.persistRecordedIds(datasetStore.selectedCode, uploadedIds)
     toastMessage.value = '🎉 Clips uploaded successfully!'
     showToast.value = true
     // Load next batch
