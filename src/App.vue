@@ -19,6 +19,7 @@ const datasetStore = useDatasetStore()
 const initError = ref<string | null>(null)
 const needsLogin = ref(!userStore.userId)
 const showSetup = ref(false)
+const setupMode = ref<'setup' | 'edit'>('setup')
 const showCookieBanner = ref(localStorage.getItem(CONSENT_KEY) === null)
 const consentDeclined = ref(localStorage.getItem(CONSENT_KEY) === 'declined')
 
@@ -46,6 +47,7 @@ async function onLoginDone() {
 
 function onNeedsSetup() {
   needsLogin.value = false
+  setupMode.value = 'setup'
   showSetup.value = true
 }
 
@@ -86,7 +88,7 @@ async function onLanguageChange(code: string) {
 
 <template>
   <div id="app-root">
-    <AppNavBar @logout="onLogout" @language-change="onLanguageChange" />
+    <AppNavBar @logout="onLogout" @language-change="onLanguageChange" @open-settings="setupMode = 'edit'; showSetup = true" />
 
     <main>
       <div v-if="consentDeclined" class="init-error">
@@ -101,7 +103,7 @@ async function onLanguageChange(code: string) {
     </main>
 
     <LoginModal v-if="needsLogin && !showCookieBanner && !consentDeclined" @done="onLoginDone" @needs-setup="onNeedsSetup" />
-    <SetupModal v-if="showSetup" @done="onSetupDone" />
+    <SetupModal v-if="showSetup" :mode="setupMode" @done="onSetupDone" />
     <CookieBanner v-if="showCookieBanner" @accept="onCookieAccept" @decline="onCookieDecline" />
   </div>
 </template>

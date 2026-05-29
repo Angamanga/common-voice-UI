@@ -14,10 +14,12 @@ export interface Demographics {
 
 export const useUserStore = defineStore('user', () => {
   const STORAGE_KEY = 'cv_user_id'
+  const EMAIL_KEY = 'cv_user_email'
   const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
   const storedId = localStorage.getItem(STORAGE_KEY)
   if (storedId && !UUID_RE.test(storedId)) localStorage.removeItem(STORAGE_KEY)
   const userId = ref<string | null>(storedId && UUID_RE.test(storedId) ? storedId : null)
+  const email = ref<string | null>(localStorage.getItem(EMAIL_KEY))
   const username = ref<string>('User')
   const age = ref<string | null>(null)
   const gender = ref<string | null>(null)
@@ -25,6 +27,10 @@ export const useUserStore = defineStore('user', () => {
   const accentCodes = ref<Record<string, string>>({})
 
   async function createUser(demo: Demographics = {}): Promise<{ isNew: boolean }> {
+    if (demo.email && !email.value) {
+      email.value = demo.email
+      localStorage.setItem(EMAIL_KEY, demo.email)
+    }
     if (userId.value) return { isNew: false }
     try {
       const { data: raw } = await api.post('/auth/users', demo)
@@ -53,6 +59,10 @@ export const useUserStore = defineStore('user', () => {
   }
 
   function setDemographics(demo: Demographics) {
+    if (demo.email) {
+      email.value = demo.email
+      localStorage.setItem(EMAIL_KEY, demo.email)
+    }
     if (demo.age !== undefined) age.value = demo.age
     if (demo.gender !== undefined) gender.value = demo.gender
     if (demo.variantCode !== undefined) variantCode.value = demo.variantCode
@@ -72,7 +82,9 @@ export const useUserStore = defineStore('user', () => {
 
   function logout() {
     localStorage.removeItem(STORAGE_KEY)
+    localStorage.removeItem(EMAIL_KEY)
     userId.value = null
+    email.value = null
     username.value = 'User'
     age.value = null
     gender.value = null
@@ -80,5 +92,5 @@ export const useUserStore = defineStore('user', () => {
     accentCodes.value = {}
   }
 
-  return { userId, username, age, gender, variantCode, accentCodes, createUser, setDemographics, getDemographics, logout }
+  return { userId, email, username, age, gender, variantCode, accentCodes, createUser, setDemographics, getDemographics, logout }
 })

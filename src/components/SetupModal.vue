@@ -4,12 +4,14 @@ import QRCode from 'qrcode'
 import { useDatasetStore } from '@/stores/dataset'
 import { useUserStore } from '@/stores/user'
 
+const props = defineProps<{ mode?: 'setup' | 'edit' }>()
 const emit = defineEmits<{ done: [] }>()
 
 const datasetStore = useDatasetStore()
 const userStore = useUserStore()
 
 const step = ref<'form' | 'recovery'>('form')
+const selectedEmail = ref(userStore.email ?? '')
 const selectedCodes = ref<string[]>([...datasetStore.selectedCodes])
 const showAddLang = ref(false)
 const langToAdd = ref('')
@@ -54,6 +56,7 @@ async function submit() {
   try {
     datasetStore.selectLanguages(selectedCodes.value)
     userStore.setDemographics({
+      email: selectedEmail.value || undefined,
       age: selectedAge.value || undefined,
       gender: selectedGender.value || undefined,
       accentCodes: selectedAccents.value,
@@ -87,6 +90,16 @@ async function copyCode() {
         <p class="modal-subtitle">Choose a language and optionally share demographic info to improve voice data quality.</p>
 
         <div v-if="error" class="error-banner">{{ error }}</div>
+
+        <div class="field">
+          <label>Email address</label>
+          <input
+            v-model="selectedEmail"
+            type="email"
+            placeholder="you@example.com"
+            autocomplete="email"
+          />
+        </div>
 
         <div class="field">
           <label>Languages</label>
@@ -152,8 +165,8 @@ async function copyCode() {
         </div>
 
         <button class="submit-btn" :disabled="loading || selectedCodes.length === 0" @click="submit">
-          <span v-if="loading">Setting up…</span>
-          <span v-else>Get Started</span>
+          <span v-if="loading">{{ props.mode === 'edit' ? 'Saving…' : 'Setting up…' }}</span>
+          <span v-else>{{ props.mode === 'edit' ? 'Save' : 'Get Started' }}</span>
         </button>
       </template>
 
@@ -241,6 +254,23 @@ async function copyCode() {
   font-weight: 400;
   color: #aaa;
   font-size: 0.8rem;
+}
+
+.field input[type="email"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  color: #0f0f0f;
+  outline: none;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+
+.field input[type="email"]:focus {
+  border-color: #0095ff;
+  box-shadow: 0 0 0 3px rgba(0,149,255,0.15);
 }
 
 .field select {

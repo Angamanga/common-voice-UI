@@ -2,7 +2,7 @@
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useDatasetStore } from '@/stores/dataset'
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -10,14 +10,26 @@ const userStore = useUserStore()
 const datasetStore = useDatasetStore()
 
 const isLoggedIn = computed(() => !!userStore.userId)
+const showProfile = ref(false)
+
+const avatarInitials = computed(() =>
+  (userStore.email ?? '').charAt(0).toUpperCase() || 'U'
+)
 
 const emit = defineEmits<{
   logout: []
   languageChange: [code: string]
+  openSettings: []
 }>()
 
 function onLogout() {
+  showProfile.value = false
   emit('logout')
+}
+
+function onOpenSettings() {
+  showProfile.value = false
+  emit('openSettings')
 }
 
 function onLanguageChange(code: string) {
@@ -78,10 +90,48 @@ function navigate(path: string) {
         <span class="lang-chevron">▾</span>
       </div>
 
-      <!-- User menu -->
-      <button v-if="isLoggedIn" class="user-btn" @click="onLogout">
-        Log out
-      </button>
+      <!-- Profile avatar + dropdown -->
+      <div v-if="isLoggedIn" class="profile-wrap">
+        <button class="avatar" @click="showProfile = !showProfile" :aria-expanded="showProfile">
+          {{ avatarInitials }}
+        </button>
+
+        <template v-if="showProfile">
+          <!-- click-away backdrop -->
+          <div class="backdrop" @click="showProfile = false" />
+
+          <div class="dropdown">
+            <!-- Languages & accents -->
+            <div class="dropdown-section">
+              <p class="dropdown-section-label">Languages</p>
+              <div
+                v-for="code in datasetStore.selectedCodes"
+                :key="code"
+                class="profile-lang-row"
+              >
+                <span class="profile-lang-name">
+                  {{ datasetStore.languages.find(l => l.code === code)?.name ?? code }}
+                </span>
+                <span v-if="userStore.accentCodes[code]" class="profile-lang-accent">
+                  {{ datasetStore.languages.find(l => l.code === code)?.predefined_accents.find(a => a.code === userStore.accentCodes[code])?.name ?? userStore.accentCodes[code] }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Demographics -->
+            <div v-if="userStore.age || userStore.gender" class="dropdown-section">
+              <p class="dropdown-section-label">Demographics</p>
+              <p v-if="userStore.age" class="profile-detail">Age: {{ userStore.age }}</p>
+              <p v-if="userStore.gender" class="profile-detail">Gender: {{ userStore.gender }}</p>
+            </div>
+
+            <div class="dropdown-divider" />
+
+            <button class="dropdown-item" @click="onOpenSettings">Edit profile</button>
+            <button class="dropdown-item dropdown-item--danger" @click="onLogout">Log out</button>
+          </div>
+        </template>
+      </div>
     </div>
   </header>
 </template>
@@ -150,7 +200,6 @@ function navigate(path: string) {
   display: flex;
   align-items: center;
   gap: 8px;
-  position: relative;
 }
 
 /* Language select */
@@ -187,46 +236,113 @@ function navigate(path: string) {
   pointer-events: none;
 }
 
-/* User menu */
-.user-btn {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 6px;
+/* Profile */
+.profile-wrap {
+  position: relative;
 }
 
-.user-btn:hover { background: #f5f5f5; }
-
 .avatar {
-  width: 32px;
-  height: 32px;
+  width: 36px;
+  height: 36px;
   border-radius: 50%;
   background: #ff4f5e;
   color: #fff;
   font-weight: 700;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
+  border: none;
+  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: opacity 0.15s;
 }
 
-.username {
+.avatar:hover { opacity: 0.85; }
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  background: #fff;
+  border: 1px solid #e8e8e8;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  min-width: 220px;
+  z-index: 11;
+  overflow: hidden;
+}
+
+.dropdown-section {
+  padding: 12px 16px;
+}
+
+.dropdown-section + .dropdown-section {
+  border-top: 1px solid #f0f0f0;
+}
+
+.dropdown-section-label {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+}
+
+.profile-lang-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.profile-lang-name {
   font-size: 0.875rem;
   font-weight: 500;
   color: #0f0f0f;
 }
 
-.chevron {
-  font-size: 0.75rem;
+.profile-lang-accent {
+  font-size: 0.78rem;
   color: #888;
-  transition: transform 0.15s;
+  text-align: right;
 }
 
-.chevron.open { transform: rotate(180deg); }
+.profile-detail {
+  font-size: 0.875rem;
+  color: #444;
+  margin: 2px 0;
+}
+
+.dropdown-divider {
+  height: 1px;
+  background: #f0f0f0;
+}
+
+.dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 11px 16px;
+  font-size: 0.875rem;
+  color: #333;
+  background: none;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s;
+}
+
+.dropdown-item:hover { background: #f5f5f5; }
+
+.dropdown-item--danger { color: #c62828; }
+.dropdown-item--danger:hover { background: #fff3f3; }
 
 @media (max-width: 640px) {
   .navbar {
@@ -249,30 +365,5 @@ function navigate(path: string) {
     padding: 4px 22px 4px 8px;
     max-width: 110px;
   }
-  .user-btn {
-    font-size: 0.8rem;
-    padding: 4px 6px;
-  }
 }
-
-.dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  background: #fff;
-  border: 1px solid #e8e8e8;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  min-width: 140px;
-  overflow: hidden;
-}
-
-.dropdown-item {
-  padding: 10px 16px;
-  font-size: 0.875rem;
-  color: #333;
-  cursor: pointer;
-}
-
-.dropdown-item:hover { background: #f5f5f5; }
 </style>
