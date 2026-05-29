@@ -25,6 +25,7 @@ const consentDeclined = ref(localStorage.getItem(CONSENT_KEY) === 'declined')
 onMounted(async () => {
   try {
     await authStore.fetchToken()
+    datasetStore.fetchLanguages()
     // If userId already in localStorage, skip login and load sentences immediately
     if (userStore.userId) {
       await sentenceStore.fetchBatch(datasetStore.selectedCode)

@@ -93,7 +93,7 @@ async function onSubmit() {
     await recordingStore.uploadAll(sentenceStore.slots, {
       datasetCode: datasetStore.selectedCode,
       userId: userStore.userId ?? '',
-      ...userStore.getDemographics(),
+      ...userStore.getDemographics(datasetStore.selectedCode),
     })
     // Persist the IDs of successfully uploaded sentences so they are skipped in future sessions
     const uploadedIds = sentenceStore.slots

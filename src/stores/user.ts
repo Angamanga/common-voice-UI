@@ -9,6 +9,7 @@ export interface Demographics {
   gender?: string
   variantCode?: string
   accentCode?: string
+  accentCodes?: Record<string, string>
 }
 
 export const useUserStore = defineStore('user', () => {
@@ -21,7 +22,7 @@ export const useUserStore = defineStore('user', () => {
   const age = ref<string | null>(null)
   const gender = ref<string | null>(null)
   const variantCode = ref<string | null>(null)
-  const accentCode = ref<string | null>(null)
+  const accentCodes = ref<Record<string, string>>({})
 
   async function createUser(demo: Demographics = {}): Promise<{ isNew: boolean }> {
     if (userId.value) return { isNew: false }
@@ -55,15 +56,17 @@ export const useUserStore = defineStore('user', () => {
     if (demo.age !== undefined) age.value = demo.age
     if (demo.gender !== undefined) gender.value = demo.gender
     if (demo.variantCode !== undefined) variantCode.value = demo.variantCode
-    if (demo.accentCode !== undefined) accentCode.value = demo.accentCode
+    if (demo.accentCodes !== undefined) accentCodes.value = demo.accentCodes
   }
 
-  function getDemographics(): Demographics {
+  function getDemographics(languageCode?: string): Demographics {
     return {
       ...(age.value ? { age: age.value } : {}),
       ...(gender.value ? { gender: gender.value } : {}),
       ...(variantCode.value ? { variantCode: variantCode.value } : {}),
-      ...(accentCode.value ? { accentCode: accentCode.value } : {}),
+      ...(languageCode && accentCodes.value[languageCode]
+        ? { accentCode: accentCodes.value[languageCode] }
+        : {}),
     }
   }
 
@@ -74,8 +77,8 @@ export const useUserStore = defineStore('user', () => {
     age.value = null
     gender.value = null
     variantCode.value = null
-    accentCode.value = null
+    accentCodes.value = {}
   }
 
-  return { userId, username, age, gender, variantCode, accentCode, createUser, setDemographics, getDemographics, logout }
+  return { userId, username, age, gender, variantCode, accentCodes, createUser, setDemographics, getDemographics, logout }
 })

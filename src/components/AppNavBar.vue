@@ -68,7 +68,7 @@ function navigate(path: string) {
           @change="onLanguageChange(($event.target as HTMLSelectElement).value)"
         >
           <option
-            v-for="lang in datasetStore.languages"
+            v-for="lang in datasetStore.languages.filter(l => datasetStore.selectedCodes.includes(l.code))"
             :key="lang.code"
             :value="lang.code"
           >
