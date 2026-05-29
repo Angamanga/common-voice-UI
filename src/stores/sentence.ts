@@ -95,12 +95,42 @@ export const useSentenceStore = defineStore('sentence', () => {
     advanceActive(index)
   }
 
+  async function skipAndReplace(index: number, languageCode: string) {
+    if (!slots.value[index]) return
+    slots.value[index].status = 'pending'
+    loading.value = true
+    try {
+      const recordedIds = loadRecordedIds(languageCode)
+      let replacement: Sentence | null = null
+      let attempts = 0
+      while (!replacement && attempts < 5) {
+        const { data } = await api.get('/text/sentences', {
+          params: { languageCode, limit: 1, offset: offset.value },
+        })
+        const sentences: Sentence[] = data.data ?? data.sentences ?? data
+        offset.value += 1
+        localStorage.setItem(offsetKey(languageCode), String(offset.value))
+        const fresh = sentences.filter((s) => !recordedIds.has(s.id))
+        if (fresh.length > 0) replacement = fresh[0]
+        attempts++
+      }
+      if (replacement) {
+        slots.value[index] = { sentence: replacement, status: 'pending' }
+      }
+    } catch {
+      error.value = 'Could not load a new sentence'
+    } finally {
+      loading.value = false
+    }
+  }
+
   function setActiveIndex(index: number) {
     activeIndex.value = index
   }
 
   function advanceActive(fromIndex: number) {
-    const next = slots.value.findIndex((s, i) => i > fromIndex && s.status === 'pending')
+    let next = slots.value.findIndex((s, i) => i > fromIndex && s.status === 'pending')
+    if (next === -1) next = slots.value.findIndex((s, i) => i < fromIndex && s.status === 'pending')
     if (next !== -1) activeIndex.value = next
   }
 
@@ -129,6 +159,7 @@ export const useSentenceStore = defineStore('sentence', () => {
     fetchBatch,
     markRecorded,
     markSkipped,
+    skipAndReplace,
     setActiveIndex,
     persistRecordedIds,
     reset,

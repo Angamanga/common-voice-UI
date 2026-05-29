@@ -81,7 +81,7 @@ async function onSkip() {
   if (recordingStore.isRecording) await recordingStore.stopRecording()
   const idx = sentenceStore.activeIndex
   recordingStore.resetSlot(idx)
-  sentenceStore.markSkipped(idx)
+  await sentenceStore.skipAndReplace(idx, datasetStore.selectedCode)
 }
 
 // ── Submit ────────────────────────────────────────────────────────────────────
