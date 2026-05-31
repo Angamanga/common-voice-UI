@@ -39,6 +39,7 @@ function onLanguageChange(code: string) {
 
 const tabs = [
   { label: 'Speak', icon: '🎤', route: '/speak' },
+  { label: 'Listen', icon: '🎧', route: '/listen' },
 ]
 
 function navigate(path: string) {

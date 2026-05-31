@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import api from '@/lib/api'
 import type { SentenceSlot } from '@/stores/sentence'
+import { useMockStorageStore } from '@/stores/mockStorage'
 
 export type RecordingStatus = 'idle' | 'recording' | 'recorded' | 'uploading' | 'uploaded' | 'error'
 
@@ -124,7 +125,6 @@ export const useRecordingStore = defineStore('recording', () => {
       form.append('text', sentence.text)
       form.append('hash', sentence.hash)
       form.append('userId', opts.userId)
-      console.log(opts.userId)
       if (opts.age) form.append('age', opts.age)
       if (opts.gender) form.append('gender', opts.gender)
       if (opts.variantCode) form.append('variantCode', opts.variantCode)
@@ -132,7 +132,9 @@ export const useRecordingStore = defineStore('recording', () => {
 
       try {
         const { data } = await api.post('/audio', form)
+        console.log(`Uploaded slot ${i}:`, data)
         slots.value[i] = { ...slots.value[i], status: 'uploaded', uploadId: data.id }
+        useMockStorageStore().addRecording(data.id, opts.userId)
       } catch (err: unknown) {
         const msg = err instanceof Error ? err.message : 'Upload failed'
         slots.value[i] = { ...slots.value[i], status: 'error', error: msg }

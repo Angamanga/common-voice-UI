@@ -6,7 +6,7 @@ const router = createRouter({
   routes: [
     { path: '/', redirect: '/speak' },
     { path: '/speak', name: 'speak', component: SpeakView },
-    { path: '/listen', name: 'listen', component: () => import('@/views/PlaceholderView.vue') },
+    { path: '/listen', name: 'listen', component: () => import('@/views/ListenView.vue') },
     { path: '/write', name: 'write', component: () => import('@/views/PlaceholderView.vue') },
     { path: '/review', name: 'review', component: () => import('@/views/PlaceholderView.vue') },
   ],
